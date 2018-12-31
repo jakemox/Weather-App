@@ -38,9 +38,15 @@ export default class Search extends React.Component {
         }
     }
 
-    action = (e) => {
+    capitalizedLocation() {
+        let location = document.getElementById('search').value;
+        return location.slice(0,1).toUpperCase() + location.slice(1, location.length).toLowerCase();
+
+    }
+
+    action = () => {
         this.props.action({
-            location: document.getElementById('search').value,
+            location: this.capitalizedLocation(),
             clicked: true
         });
     }
