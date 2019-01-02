@@ -8,10 +8,11 @@ import img from '../img/background.jpg';
 import TodayWeather from '../today-weather/today-weather.jsx';
 
 const Header = styled.header`
-    height: ${props => props.clicked ? "25vh" : "100vh"};
+    height: ${props => props.clicked ? "250px" : "100vh"};
     align-content: ${props => props.clicked ? "flex-start" : "center"};
 
     display: flex;
+    flex-direction: column;
     justify-content: center;
     align-items: center;
     width: 100vw;
@@ -20,20 +21,42 @@ const Header = styled.header`
     background-size: cover;
     background-position: center;
     transition: 0.5s;
+
+    @media (min-width: 700px) {
+        flex-direction: row;
+        height: ${props => props.clicked ? "150px" : "100vh"};
+    }
 `;
 
 const Title = styled.h1`
     color: white;
-    margin: 1rem;
+    margin: 0.5rem;
+
+    @media (min-width: 700px) {
+        margin: 1rem;
+    }
 `;
 
 const Place = styled.h2`
     color: black;
     margin: 1rem;
+    text-align: center;
+    font-size: 2rem;
+    font-weight: 200;
 `;
 
 const Date = styled(Place)`
     font-size: 1rem;
+`;
+
+const CurrentWeather = styled.div`
+    width: initial;
+    margin: 0 auto;
+    text-align: center;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
 `;
 
 const TodayList = styled.div`
@@ -62,7 +85,6 @@ export default class Forecast extends React.Component {
         if (data) {
             this.setState({
                 location: data.location,
-                clicked: true
             });
             fetch(`http://dataservice.accuweather.com/locations/v1/cities/search?apikey=tTC6L52CwTfdjRBAjUUhXpJAiVJhV4A1&q=${data.location}`)
                 .then(resp => resp.json())
@@ -77,14 +99,17 @@ export default class Forecast extends React.Component {
 
     getCurrentConditions(key) {
         if (key) {
-            fetch(`http://dataservice.accuweather.com/currentconditions/v1/${key}?apikey=tTC6L52CwTfdjRBAjUUhXpJAiVJhV4A1`)
+            fetch(`http://dataservice.accuweather.com/currentconditions/v1/${key}?apikey=tTC6L52CwTfdjRBAjUUhXpJAiVJhV4A1&details=true`)
                 .then(resp => resp.json())
                 .then(json => {
                     console.log(json);
+                    console.log(json[0].Temperature.Metric.Value);
                     this.setState({
-                        current: json[0]
+                        current: json,
+                        clicked: true
                     });
                     console.log(this.state.current);
+                    console.log(this.state.current[0].Temperature.Metric.Value);
                 });
         }
     }
@@ -126,7 +151,7 @@ export default class Forecast extends React.Component {
                     <Search action={this.getLocationKey}/>
                 </Header>
             )    
-        } else {
+        } else if (this.state.clicked === true) {
             return (
                 <>
                     <Header clicked={this.state.clicked}>
@@ -136,19 +161,21 @@ export default class Forecast extends React.Component {
 
                     <Place>{this.state.location}</Place>
 
-                    <Current 
-                        condition={this.state.current.WeatherText}
-                        temperature={Math.round(this.state.current.Temperature.Metric.Value)}
-                        icon={this.state.current.WeatherIcon < 10 ? '0' + this.state.current.WeatherIcon : this.state.current.WeatherIcon}
-                    />
+                    <CurrentWeather>
+                        <Current 
+                            condition={this.state.current[0].WeatherText}
+                            icon={this.state.current[0].WeatherIcon < 10 ? '0' + this.state.current[0].WeatherIcon : this.state.current[0].WeatherIcon}
+                            temp={Math.round(this.state.current[0].Temperature.Metric.Value)}
+                        />
+                    </CurrentWeather>
 
                     <TodayList>
-                        <Date>Today</Date>
                         {this.state.hourly.map(
                             (hour, i) => <TodayWeather
                                 key={i}
                                 time={DateTime.fromMillis(hour.EpochDateTime * 1000).toLocaleString(DateTime.TIME_SIMPLE)}
                                 icon={hour.WeatherIcon < 10 ? '0' + hour.WeatherIcon : hour.WeatherIcon}
+                                temp={Math.round(hour.Temperature.Value)}
                             />
                         )}
                     </TodayList>
