@@ -3,6 +3,7 @@ import styled from 'styled-components';
 
 const Description = styled.h3`
     font-weight: 100;
+    margin-top: 0.5rem;
     margin-bottom: 0.5rem;
 `;
 
@@ -11,7 +12,6 @@ const Condition = styled.div`
     justify-content: center;
     align-items: center;
     width: 80vw;
-    border-bottom: solid 1px #ddd;
 `;
 
 const Temp = styled.p`

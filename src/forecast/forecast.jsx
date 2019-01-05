@@ -8,7 +8,7 @@ import img from '../img/background.jpg';
 import TodayWeather from '../today-weather/today-weather.jsx';
 
 const Header = styled.header`
-    height: ${props => props.clicked ? "250px" : "100vh"};
+    height: ${props => props.clicked ? "200px" : "100vh"};
     align-content: ${props => props.clicked ? "flex-start" : "center"};
 
     display: flex;
@@ -24,7 +24,6 @@ const Header = styled.header`
 
     @media (min-width: 700px) {
         flex-direction: row;
-        height: ${props => props.clicked ? "150px" : "100vh"};
     }
 `;
 
@@ -49,22 +48,81 @@ const Date = styled(Place)`
     font-size: 1rem;
 `;
 
+const Daily = styled.div`
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+
+    @media (min-width: 700px) {
+        flex-direction: row;
+        justify-content: center;
+    }
+`;
+
 const CurrentWeather = styled.div`
-    width: initial;
+    width: 150px;
     margin: 0 auto;
     text-align: center;
     display: flex;
     flex-direction: column;
     justify-content: center;
     align-items: center;
+
+    @media (min-width: 700px) {
+        margin: 0;
+        border-bottom: 10px solid rgb(120, 209, 236);
+    }
 `;
 
 const TodayList = styled.div`
     display: flex;
+    width: calc(80vw + 25px);
+    margin: 1rem auto;
+
+    @media (min-width: 700px) {
+        margin: 3rem auto;
+    }
+`;
+
+const TodayButtons = styled.div`
+    display: flex;
+    width: 80vw;
+    margin: 0 auto;
+    overflow: hidden;
+`;
+
+const TodayItems = styled.div`
+    display: flex;
+    width: 300px;
+    position: relative;
+    left: ${(props) => props.scrollPos}px;
+    transition: 0.2s;
+`;
+
+const LeftScroll = styled.button`
+    width: 25px;
+    border: none;
+    background-color: ${(props) => props.leftCanScroll ? 'rgb(120, 209, 236)' : '#ddd'};
+    color: white;
+`;
+
+const RightScroll = styled.button`
+    width: 25px;
+    border: none;
+    background-color: ${(props) => props.rightCanScroll ? 'rgb(120, 209, 236)' : '#ddd'};
+    color: white;
 `;
 
 const WeatherList = styled.div`
     display: flex;
+    margin: 1rem auto;
+    justify-content: space-between;
+    width: 80vw;
+
+    @media (min-width: 700px) {
+        width: 450px;
+        margin: 0;
+    }
 `;
 
 export default class Forecast extends React.Component {
@@ -76,7 +134,10 @@ export default class Forecast extends React.Component {
             current: {},
             hourly: [],
             forecasts: [],
-            clicked: false
+            clicked: false,
+            scrollPos: 0,
+            leftCanScroll: false,
+            rightCanScroll: true
         }
       }
     
@@ -142,6 +203,32 @@ export default class Forecast extends React.Component {
                 });
         }
     }
+
+    scrollLeft = () => {
+        if (this.state.scrollPos < 0) {
+            this.setState({
+                scrollPos: this.state.scrollPos + 75,
+                rightCanScroll: true
+            });
+        } else {
+            this.setState({
+                leftCanScroll: false
+            })
+        }
+    }
+
+    scrollRight = () => {
+        if (this.state.scrollPos > ((12 - Math.floor(window.innerWidth * 0.8 / 75)) * -75)) {
+            this.setState({
+                scrollPos: this.state.scrollPos - 75,
+                leftCanScroll: true
+            });
+        } else {
+            this.setState({
+                rightCanScroll: false
+            })
+        }
+    }
     
     render() {
         if (this.state.clicked === false) {
@@ -161,36 +248,44 @@ export default class Forecast extends React.Component {
 
                     <Place>{this.state.location}</Place>
 
-                    <CurrentWeather>
-                        <Current 
-                            condition={this.state.current[0].WeatherText}
-                            icon={this.state.current[0].WeatherIcon < 10 ? '0' + this.state.current[0].WeatherIcon : this.state.current[0].WeatherIcon}
-                            temp={Math.round(this.state.current[0].Temperature.Metric.Value)}
-                        />
-                    </CurrentWeather>
+                    <Daily>
+                        <CurrentWeather>
+                            <Current 
+                                condition={this.state.current[0].WeatherText}
+                                icon={this.state.current[0].WeatherIcon < 10 ? '0' + this.state.current[0].WeatherIcon : this.state.current[0].WeatherIcon}
+                                temp={Math.round(this.state.current[0].Temperature.Metric.Value)}
+                            />
+                        </CurrentWeather>
+    
+                        <WeatherList>
+                            {this.state.forecasts.map(
+                                (forecast, i) => <WeatherItem
+                                    key={i}
+                                    date={DateTime.fromISO(forecast.Date).toLocaleString({ weekday: 'short', day: 'numeric'})}
+                                    icon={forecast.Day.Icon < 10 ? '0' + forecast.Day.Icon : forecast.Day.Icon}
+                                    high={Math.round(forecast.Temperature.Maximum.Value)}
+                                    low={Math.round(forecast.Temperature.Minimum.Value)}
+                                />
+                            )}
+                        </WeatherList>
+                    </Daily>
 
                     <TodayList>
-                        {this.state.hourly.map(
-                            (hour, i) => <TodayWeather
-                                key={i}
-                                time={DateTime.fromMillis(hour.EpochDateTime * 1000).toLocaleString(DateTime.TIME_SIMPLE)}
-                                icon={hour.WeatherIcon < 10 ? '0' + hour.WeatherIcon : hour.WeatherIcon}
-                                temp={Math.round(hour.Temperature.Value)}
-                            />
-                        )}
+                        <LeftScroll onClick={this.scrollLeft} leftCanScroll={this.state.leftCanScroll}>❮</LeftScroll>
+                        <TodayButtons>
+                            <TodayItems scrollPos={this.state.scrollPos}>
+                                {this.state.hourly.map(
+                                    (hour, i) => <TodayWeather
+                                        key={i}
+                                        time={DateTime.fromMillis(hour.EpochDateTime * 1000).toLocaleString(DateTime.TIME_SIMPLE)}
+                                        icon={hour.WeatherIcon < 10 ? '0' + hour.WeatherIcon : hour.WeatherIcon}
+                                        temp={Math.round(hour.Temperature.Value)}
+                                    />
+                                )}
+                            </TodayItems>
+                        </TodayButtons>
+                        <RightScroll onClick={this.scrollRight} rightCanScroll={this.state.rightCanScroll}>❯</RightScroll>
                     </TodayList>
-
-                    <WeatherList>
-                        {this.state.forecasts.map(
-                            (forecast, i) => <WeatherItem
-                                key={i}
-                                date={DateTime.fromISO(forecast.Date).toLocaleString({ weekday: 'short', day: '2-digit'})}
-                                icon={forecast.Day.Icon < 10 ? '0' + forecast.Day.Icon : forecast.Day.Icon}
-                                high={Math.round(forecast.Temperature.Maximum.Value)}
-                                low={Math.round(forecast.Temperature.Minimum.Value)}
-                            />
-                        )}
-                    </WeatherList>
                 </>
             );
         }

@@ -6,6 +6,9 @@ const TodayForecast = styled.div`
     flex-direction: column;
     justify-content: center;
     align-items: center;
+    border-top: solid 1px #ddd;
+    border-bottom: solid 1px #ddd;
+    border-right: solid 1px #ddd;
 `;
 
 const Time = styled.h3`
